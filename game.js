@@ -7,7 +7,7 @@ canvas.height = 640;
 let puan = 0;
 let gameActive = true;
 
-// RESİM TANIMLAMALARI
+// RESİMLER
 const penguinImg = new Image();
 penguinImg.src = "assets/penguin.png";
 
@@ -60,10 +60,12 @@ function jump() {
 function update() {
     if (!gameActive) return;
 
+    // Penguen Hareket
     penguin.x += moveDir * 8;
     penguin.y += penguin.velocityY;
     penguin.velocityY += penguin.gravity;
 
+    // Yer Kontrolü
     if (penguin.y > 540) {
         penguin.y = 540;
         penguin.isJumping = false;
@@ -72,27 +74,33 @@ function update() {
         penguin.maxFrames = 5;
     }
 
+    // Ekran Sınırı
     if (penguin.x < 0) penguin.x = 0;
     if (penguin.x > canvas.width - penguin.w) penguin.x = canvas.width - penguin.w;
 
+    // Engel Üretimi
     if (++timer > 55) {
         obstacles.push({ x: Math.random() * (canvas.width - 40), y: -40, s: 40 + Math.random() * 20 });
         timer = 0;
     }
 
+    // Engel Güncelleme
     obstacles.forEach((o, i) => {
         o.y += 6 + (puan / 20);
         if (o.y > canvas.height) {
             obstacles.splice(i, 1);
             puan++;
         }
+        // Çarpışma
         if (penguin.x + 15 < o.x + o.s && penguin.x + 45 > o.x && 
             penguin.y + 10 < o.y + o.s && penguin.y + 55 > o.y) {
             gameActive = false;
+            alert("OYUN BİTTİ! PUANIN: " + puan);
             location.reload();
         }
     });
 
+    // Animasyon
     penguin.fps++;
     if (penguin.fps % penguin.stagger === 0) {
         penguin.frameX = (penguin.frameX + 1) % penguin.maxFrames;
@@ -102,7 +110,7 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. ARKA PLANI ÇİZ (En alta)
+    // 1. Arka Plan
     if (bgImg.complete) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
     } else {
@@ -110,18 +118,18 @@ function draw() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 2. PENGUENİ ÇİZ
+    // 2. Penguen
     if (penguinImg.complete) {
         ctx.drawImage(penguinImg, penguin.frameX * 64, penguin.frameY * 40, 64, 40, penguin.x, penguin.y, 64, 64);
     }
 
-    // 3. ENGELLERİ ÇİZ (Sadece penguenin önünde kalsın diye penguenden sonra çiziyoruz)
+    // 3. Engeller
     ctx.fillStyle = "#800000";
     obstacles.forEach(o => {
         ctx.fillRect(o.x, o.y, o.s, o.s);
     });
 
-    // 4. PUANI ÇİZ
+    // 4. Puan
     ctx.fillStyle = "white";
     ctx.font = "bold 26px Arial";
     ctx.fillText("PUAN: " + puan, 20, 45);
@@ -133,10 +141,11 @@ function gameLoop() {
     if (gameActive) requestAnimationFrame(gameLoop);
 }
 
-// Resimler yüklenince oyunu başlat
-bgImg.onload = () => {
-    if (penguinImg.complete) gameLoop();
-};
-penguinImg.onload = () => {
-    if (bgImg.complete) gameLoop();
-};
+// Oyunu Başlat
+let imagesLoaded = 0;
+function checkLoad() {
+    imagesLoaded++;
+    if (imagesLoaded >= 2) gameLoop();
+}
+penguinImg.onload = checkLoad;
+bgImg.onload = checkLoad;
