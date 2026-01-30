@@ -1,13 +1,14 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Çözünürlük Sabitleme
 canvas.width = 360;
 canvas.height = 640;
 
 let puan = 0;
 let gameActive = true;
 
-// RESİMLER
+// RESİMLERİ HAZIRLA
 const penguinImg = new Image();
 penguinImg.src = "assets/penguin.png";
 
@@ -17,7 +18,8 @@ bgImg.src = "assets/arka-plan.png";
 const penguin = {
     x: 148,
     y: 540,
-    w: 64, h: 64,
+    w: 64, 
+    h: 64,
     frameX: 0,
     frameY: 0,
     maxFrames: 5,
@@ -33,26 +35,33 @@ let timer = 0;
 let moveDir = 0;
 
 // KONTROLLER
-window.onkeydown = (e) => {
+window.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") moveDir = -1;
     if (e.key === "ArrowRight") moveDir = 1;
     if (e.key === " " || e.key === "ArrowUp") jump();
-};
-window.onkeyup = () => moveDir = 0;
+});
 
-canvas.ontouchstart = (e) => {
+window.addEventListener("keyup", () => {
+    moveDir = 0;
+});
+
+// MOBİL DOKUNMATİK
+canvas.addEventListener("touchstart", (e) => {
     const tx = e.touches[0].clientX;
     const ty = e.touches[0].clientY;
     if (ty < window.innerHeight / 2) jump();
     else moveDir = tx < window.innerWidth / 2 ? -1 : 1;
-};
-canvas.ontouchend = () => moveDir = 0;
+});
+
+canvas.addEventListener("touchend", () => {
+    moveDir = 0;
+});
 
 function jump() {
     if (!penguin.isJumping) {
         penguin.velocityY = -16;
         penguin.isJumping = true;
-        penguin.frameY = 2;
+        penguin.frameY = 2; // Zıplama satırı
         penguin.maxFrames = 2;
     }
 }
@@ -60,38 +69,41 @@ function jump() {
 function update() {
     if (!gameActive) return;
 
-    // Penguen Hareket
+    // Hareket
     penguin.x += moveDir * 8;
     penguin.y += penguin.velocityY;
     penguin.velocityY += penguin.gravity;
 
-    // Yer Kontrolü
+    // Yerçekimi Sınırı
     if (penguin.y > 540) {
         penguin.y = 540;
         penguin.isJumping = false;
         penguin.velocityY = 0;
-        penguin.frameY = 0;
+        penguin.frameY = 0; // Yürüme satırı
         penguin.maxFrames = 5;
     }
 
-    // Ekran Sınırı
+    // Ekran Sınırları
     if (penguin.x < 0) penguin.x = 0;
     if (penguin.x > canvas.width - penguin.w) penguin.x = canvas.width - penguin.w;
 
-    // Engel Üretimi
+    // Engel Oluşturma
     if (++timer > 55) {
         obstacles.push({ x: Math.random() * (canvas.width - 40), y: -40, s: 40 + Math.random() * 20 });
         timer = 0;
     }
 
-    // Engel Güncelleme
+    // Engelleri Güncelle
     obstacles.forEach((o, i) => {
         o.y += 6 + (puan / 20);
+        
+        // Puan Kazanma
         if (o.y > canvas.height) {
             obstacles.splice(i, 1);
             puan++;
         }
-        // Çarpışma
+
+        // Çarpışma Testi
         if (penguin.x + 15 < o.x + o.s && penguin.x + 45 > o.x && 
             penguin.y + 10 < o.y + o.s && penguin.y + 55 > o.y) {
             gameActive = false;
@@ -100,7 +112,7 @@ function update() {
         }
     });
 
-    // Animasyon
+    // Animasyon Kareleri
     penguin.fps++;
     if (penguin.fps % penguin.stagger === 0) {
         penguin.frameX = (penguin.frameX + 1) % penguin.maxFrames;
@@ -110,26 +122,26 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Arka Plan
-    if (bgImg.complete) {
+    // 1. ARKA PLAN
+    if (bgImg.complete && bgImg.width > 0) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
     } else {
-        ctx.fillStyle = "#87ceeb";
+        ctx.fillStyle = "#87ceeb"; // Resim yoksa mavi kalsın
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 2. Penguen
-    if (penguinImg.complete) {
+    // 2. PENGUEN
+    if (penguinImg.complete && penguinImg.width > 0) {
         ctx.drawImage(penguinImg, penguin.frameX * 64, penguin.frameY * 40, 64, 40, penguin.x, penguin.y, 64, 64);
     }
 
-    // 3. Engeller
+    // 3. ENGELLER
     ctx.fillStyle = "#800000";
     obstacles.forEach(o => {
         ctx.fillRect(o.x, o.y, o.s, o.s);
     });
 
-    // 4. Puan
+    // 4. PUAN TABLOSU
     ctx.fillStyle = "white";
     ctx.font = "bold 26px Arial";
     ctx.fillText("PUAN: " + puan, 20, 45);
@@ -138,14 +150,8 @@ function draw() {
 function gameLoop() {
     update();
     draw();
-    if (gameActive) requestAnimationFrame(gameLoop);
+    requestAnimationFrame(gameLoop);
 }
 
-// Oyunu Başlat
-let imagesLoaded = 0;
-function checkLoad() {
-    imagesLoaded++;
-    if (imagesLoaded >= 2) gameLoop();
-}
-penguinImg.onload = checkLoad;
-bgImg.onload = checkLoad;
+// OYUNU HEMEN BAŞLAT (Resimler arkadan gelsin)
+gameLoop();
