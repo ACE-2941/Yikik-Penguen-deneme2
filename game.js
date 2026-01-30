@@ -83,7 +83,6 @@ function update() {
         if (penguin.x + 15 < o.x + o.s && penguin.x + 45 > o.x && 
             penguin.y + 10 < o.y + o.s && penguin.y + 55 > o.y) {
             gameActive = false;
-            alert("OYUN BİTTİ! PUANIN: " + puan);
             location.reload();
         }
     });
